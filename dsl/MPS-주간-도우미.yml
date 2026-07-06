@@ -186,12 +186,15 @@ workflow:
                 ### 수정 모드 추가 규칙
                 - 기존 문서(previous_mps)가 있으면 그 양식(헤딩, 메타데이터 위치, 들여쓰기)을 그대로 유지
                 - 추가/변경된 부분만 반영, 불필요한 부분은 임의 삭제 금지
-                - previous_mps가 있고 edit_request가 비었으면 "어떻게 수정할까요?" 한 줄만 출력 (문서 생성 안 함)
+                - previous_mps가 있고 edit_request가 비었으면 "기존 MPS를 확인했습니다. 어떤 부분을 수정/추가할까요?" 한 줄만 출력 (문서 생성 안 함)
+                - previous_mps의 양식이 MPS가 아니면 "MPS 양식이 아닙니다. 다시 확인해 주세요." 한 줄만 출력
+                - 사용자가 PO를 5개 이상 언급하면 우선순위가 높은 3개로 압축한다.
+                - due_date가 '내일', '이번주 금요일' 등 비정형이면 오늘 날짜 기준 YYYY-MM-DD로 변환. 변환 불가 시 '미정'으로 표기.
 
                 ### 동작 분기
                 1. previous_mps 비어있고 content만 있을 때 → **신규 생성**
                 2. previous_mps + edit_request 모두 있을 때 → **기존 문서 기반 수정**
-                3. previous_mps만 있고 edit_request 비었을 때 → "어떻게 수정하시겠어요?" (마크다운 생성 안 함)
+                3. previous_mps만 있고 edit_request 비었을 때 → "기존 MPS를 확인했습니다. 어떤 부분을 수정/추가할까요?" (마크다운 생성 안 함)
 
                 ### 출력
                 - 위 양식의 마크다운만. 코드블록 감싸지 **않음**.
@@ -330,6 +333,10 @@ workflow:
                 - previous_mps가 Planning이고 mode가 Evaluation이면
                   → 같은 양식 골격에 Evaluation 전용 필드(행위/창출성과/GAP/진척률)만 채움
                   → Planning에 있던 진척률·행위·도구명은 Evaluation에 자연스럽게 흡수
+                - previous_mps가 있고 edit_request가 비었으면 "기존 MPS를 확인했습니다. 어떤 부분을 수정/추가할까요?" 한 줄만 출력 (문서 생성 안 함)
+                - previous_mps의 양식이 MPS가 아니면 "MPS 양식이 아닙니다. 다시 확인해 주세요." 한 줄만 출력
+                - 사용자가 PO를 5개 이상 언급하면 우선순위가 높은 3개로 압축한다.
+                - due_date가 '내일', '이번주 금요일' 등 비정형이면 오늘 날짜 기준 YYYY-MM-DD로 변환. 변환 불가 시 '미정'으로 표기.
 
                 ### 동작 분기
                 Planning 시스템 프롬프트와 동일.
@@ -358,6 +365,8 @@ workflow:
           type: answer
           answer: |
             {{#llm_planning.text#}}{{#llm_evaluation.text#}}
+            # Note: Dify if-else routes one branch at a time, so only the active LLM's text is populated.
+            # The inactive branch's variable renders as empty string — this matches the schema-doc pattern.
           variables: []
         position:
           x: 760

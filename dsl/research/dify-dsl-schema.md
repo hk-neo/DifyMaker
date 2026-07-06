@@ -598,7 +598,158 @@ workflow:
 
 ---
 
-## 8. Sources Investigated
+## 8. 분기 포함 미니멀 DSL 예시 (if-else Branching)
+
+다음 예시는 `start` 노드에서 `mode` 선택 변수를 입력받아, `if-else` 노드로 Planning/Evaluation 분기를 처리하는 구조를 보여준다.
+
+```yaml
+version: "0.1.8"
+kind: "app"
+app:
+  name: "MPS 분기 챗봇"
+  mode: "advanced-chat"
+  icon: "🤖"
+  icon_type: "emoji"
+  icon_background: "#FFFFFF"
+  description: "Planning vs Evaluation 분기를 지원하는 MPS 챗봇"
+workflow:
+  graph:
+    nodes:
+      - id: "start"
+        data:
+          type: "start"
+          variables:
+            - variable: "mode"
+              label: "작업 모드"
+              type: "select"
+              required: true
+              options: ["Planning", "Evaluation"]
+              default: "Planning"
+          is_advanced: false
+        position:
+          x: 0
+          y: 100
+        targetPosition: "left"
+        sourcePosition: "right"
+      - id: "if_else_1"
+        data:
+          type: "if-else"
+          conditions_type: "and"
+          cases:
+            - case_id: "true"
+              case_name: "Planning 분기"
+              conditions:
+                - variable: "{{#start.mode#}}"
+                  condition: "equals"
+                  value: "Planning"
+          default_flow: "false"
+        position:
+          x: 300
+          y: 100
+        targetPosition: "left"
+        sourcePosition: "right"
+      - id: "llm_planning"
+        data:
+          type: "llm"
+          model:
+            provider: "openai"
+            name: "gpt-4o-mini"
+            mode: "chat"
+            completion_params:
+              temperature: 0.7
+              max_tokens: 1000
+          prompt_template:
+            system_prompt: "당신은 MPS Planning 어시스턴트입니다. 실행 가능한 주간 계획을 세워주세요."
+            user_prompt: "{{#start.mode#}} 모드로 동작합니다."
+          context: {}
+        position:
+          x: 600
+          y: 0
+        targetPosition: "left"
+        sourcePosition: "right"
+      - id: "llm_evaluation"
+        data:
+          type: "llm"
+          model:
+            provider: "openai"
+            name: "gpt-4o-mini"
+            mode: "chat"
+            completion_params:
+              temperature: 0.7
+              max_tokens: 1000
+          prompt_template:
+            system_prompt: "당신은 MPS Evaluation 어시스턴트입니다. 계획의 실행 결과를 평가해주세요."
+            user_prompt: "{{#start.mode#}} 모드로 동작합니다."
+          context: {}
+        position:
+          x: 600
+          y: 200
+        targetPosition: "left"
+        sourcePosition: "right"
+      - id: "answer_1"
+        data:
+          type: "answer"
+          answer: |
+            ## 결과
+
+            {{#llm_planning.text#}}{{#llm_evaluation.text#}}
+          variables: []
+        position:
+          x: 900
+          y: 100
+        targetPosition: "left"
+        sourcePosition: "right"
+      - id: "end"
+        data:
+          type: "end"
+          inputs: []
+        position:
+          x: 1200
+          y: 100
+        targetPosition: "left"
+    edges:
+      - source: "start"
+        target: "if_else_1"
+        sourceHandle: null
+        targetHandle: null
+        type: "custom"
+      - source: "if_else_1"
+        target: "llm_planning"
+        sourceHandle: "true"
+        targetHandle: null
+        type: "custom"
+      - source: "if_else_1"
+        target: "llm_evaluation"
+        sourceHandle: "false"
+        targetHandle: null
+        type: "custom"
+      - source: "llm_planning"
+        target: "answer_1"
+        sourceHandle: null
+        targetHandle: null
+        type: "custom"
+      - source: "llm_evaluation"
+        target: "answer_1"
+        sourceHandle: null
+        targetHandle: null
+        type: "custom"
+      - source: "answer_1"
+        target: "end"
+        sourceHandle: null
+        targetHandle: null
+        type: "custom"
+  features:
+    opening_statement: "Planning 모드와 Evaluation 모드 중 선택해주세요."
+```
+
+**주요 포인트**:
+- `if-else` 노드의 `sourceHandle: "true"`은 Planning 분기(Planning일 때), `sourceHandle: "false"`는 Evaluation 분기를 연결한다.
+- 두 LLM 노드는 `start.mode` 변수의 값에 따라 서로 다른 시스템 프롬프트를 사용한다.
+- 두 LLM 노드의 출력은同一个 `answer_1` 노드로汇聚한다.
+
+---
+
+## 9. Sources Investigated
 
 | Source | What Was Found |
 |--------|----------------|

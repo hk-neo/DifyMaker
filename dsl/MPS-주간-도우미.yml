@@ -81,7 +81,7 @@ workflow:
           type: llm
           model:
             provider: openai
-            name: gpt-4o-mini
+            name: gpt-oss
             mode: chat
             completion_params:
               temperature: 0.3
@@ -218,7 +218,7 @@ workflow:
           type: llm
           model:
             provider: openai
-            name: gpt-4o-mini
+            name: gpt-oss
             mode: chat
             completion_params:
               temperature: 0.3

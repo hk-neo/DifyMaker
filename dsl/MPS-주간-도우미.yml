@@ -1,0 +1,429 @@
+version: "0.1.8"
+kind: app
+app:
+  name: "MPS 주간 도우미"
+  mode: advanced-chat
+  icon: "📋"
+  icon_type: emoji
+  icon_background: "#FFEAD5"
+  description: "주간 MPS Planning/Evaluation 마크다운 자동 생성. 자유 텍스트 입력 → MPS 양식 엄격 준수."
+  use_icon_as_answer_icon: false
+workflow:
+  graph:
+    nodes:
+      - id: start_node
+        data:
+          type: start
+          variables:
+            - variable: mode
+              label: 모드
+              type: select
+              required: true
+              options:
+                - Planning
+                - Evaluation
+              default: Planning
+            - variable: content
+              label: 내용 (자유 텍스트)
+              type: paragraph
+              required: false
+              default: ""
+            - variable: previous_mps
+              label: 기존 MPS (수정 시 붙여넣기)
+              type: paragraph
+              required: false
+              default: ""
+            - variable: edit_request
+              label: 수정 의도
+              type: paragraph
+              required: false
+              default: ""
+            - variable: author
+              label: 성과창출자
+              type: text-input
+              required: false
+              default: "본인"
+            - variable: due_date
+              label: 완료예상일자 (YYYY-MM-DD)
+              type: text-input
+              required: false
+              default: ""
+            - variable: mission_label
+              label: 상위 미션 라벨
+              type: text-input
+              required: false
+              default: ""
+          is_advanced: false
+        position:
+          x: 80
+          y: 200
+        targetPosition: left
+        sourcePosition: right
+      - id: if_else_node
+        data:
+          type: if-else
+          conditions_type: and
+          cases:
+            - case_id: "true"
+              case_name: Planning 분기
+              conditions:
+                - variable: "{{#start.mode#}}"
+                  condition: equals
+                  value: Planning
+          default_flow: "false"
+        position:
+          x: 300
+          y: 200
+        targetPosition: left
+        sourcePosition: right
+      - id: llm_planning
+        data:
+          type: llm
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            mode: chat
+            completion_params:
+              temperature: 0.3
+              max_tokens: 4000
+          prompt_template:
+            - id: sys_prompt
+              role: system
+              text: |
+                너는 "MPS(Mission-Performance-Strategy) 주간 Planner"다.
+                사용자가 입력한 자유 텍스트를 MPS 작성 가이드에 따라
+                "주간 Planning" 마크다운 문서로 변환한다.
+
+                ### 컨텍스트 변수
+                - 모드: Planning (항상 "Planning")
+                - 성과창출자: {{#start.author#}}
+                - 완료예상일자: {{#start.due_date#}}
+                - 상위 미션 라벨: {{#start.mission_label#}}
+                - 오늘 날짜: {{#sys.query#}}
+                - 기존 문서 컨텍스트: {{#start.previous_mps#}} (있을 때)
+                - 수정 의도: {{#start.edit_request#}} (있을 때)
+
+                ### 절대 규칙 (위반 시 출력 거부)
+
+                1. 출력은 **오직 마크다운만**. 인사/설명/메타 코멘트 금지.
+                2. 다음 양식을 **그대로** 따른다 (h1, h2, h3, 리스트 구조 동일):
+
+                ```markdown
+                # Mission
+                ## 미션1
+                - [미션 문장 — 한 문장]
+                > 📅 당주 기간: YYYY년 M월 N주차 (M/D ~ M/D) · 성과창출자: {{#start.author#}}
+
+                ## 미션의 현황 파악
+                1. 개요
+                    - [...]
+                2. 목적
+                    - [...]
+                    - [...]  (복수 가능)
+                3. 수요자 요구사항
+                    - [...]
+                    - [...]
+                4. 현재상태
+                    - As-Is (주초): [...]
+                    - To-Be (주말): [...]
+                5. 기대하는 결과물
+                    - [...]   ← PO 단위로 압축
+
+                # Performance Objective
+
+                ## PO1. [성과목표 — 결과물로만]
+                - **기대하는 결과물**: [...]
+                - **성과창출자** │ {{#start.author#}}
+                - **예상소요시간**: [...]
+                - **완료예상일자**: {{#start.due_date#}}
+
+                ### 고정변수 목표
+                - [목표 1]
+                - [목표 2] (선택, 복수 가능)
+                ### 고정변수 공략 전략
+                - 목표 1: [전략 + 실행]
+                - 목표 2: [전략 + 실행] (선택)
+                ### 변동변수 목표
+                - [목표 1]
+                - [목표 2] (선택, 복수 가능)
+                ### 변동변수 공략 전략
+                - 목표 1: [전략 + 실행]
+                - 목표 2: [전략 + 실행] (선택)
+
+                (PO2, PO3는 입력에 있을 때만)
+
+                # Risk
+                ## 외부환경 대응방안
+                - 리스크: [...]
+                - 대응: [...]
+                ## 내부역량 대응방안
+                - 리스크: [...]
+                - 대응: [...]
+                ```
+
+                3. **성과목표(PO)는 반드시 결과물로 작성**. 행위/조건/상태 금지.
+                   - ❌ "X 시스템 구축" (행위)
+                   - ❌ "사용자 수용성 확보" (상태)
+                   - ✅ "X 시스템" / "사용자 수용성 보고서"
+
+                4. **고정/변동변수 목표는 1개 이상 복수 가능**.
+                   목표 N개 → 전략 N개, **1:1 매핑**.
+
+                5. **0개 섹션은 통째로 생략**. "(해당 없음)" 같은 표기 금지.
+
+                6. **Planning에는 진척률/상태/commit 수/이미 도달한 수치/도구명 직접 표기 금지**.
+                   → "구축 완료" 표현, "X건 달성" 같은 수치, GitHub·Jira 등 도구명 직접 박기 금지.
+
+                7. **현재상태는 As-Is / To-Be 두 줄 모두 작성**.
+
+                8. **5번 기대하는 결과물은 PO 단위로 압축** — PO 안에 이미 결과물 필드 있으므로 페이지명/보고서명 일일이 나열 금지.
+
+                ### 입력 부족 시 처리
+                - 사용자가 PO1만 언급 → PO1만 생성, PO2/PO3 생략
+                - 사용자가 고정변수만 언급 → 변동변수 섹션 통째 생략
+                - 미션 문장이 모호하면 주간 범위에서 합리적으로 추정 (생성 후 사용자가 다듬게)
+
+                ### 수정 모드 추가 규칙
+                - 기존 문서(previous_mps)가 있으면 그 양식(헤딩, 메타데이터 위치, 들여쓰기)을 그대로 유지
+                - 추가/변경된 부분만 반영, 불필요한 부분은 임의 삭제 금지
+                - previous_mps가 있고 edit_request가 비었으면 "어떻게 수정할까요?" 한 줄만 출력 (문서 생성 안 함)
+
+                ### 동작 분기
+                1. previous_mps 비어있고 content만 있을 때 → **신규 생성**
+                2. previous_mps + edit_request 모두 있을 때 → **기존 문서 기반 수정**
+                3. previous_mps만 있고 edit_request 비었을 때 → "어떻게 수정하시겠어요?" (마크다운 생성 안 함)
+
+                ### 출력
+                - 위 양식의 마크다운만. 코드블록 감싸지 **않음**.
+                - 앞뒤 공백·설명 문장 금지.
+            - id: usr_prompt
+              role: user
+              text: "{{#sys.query#}}"
+          context: {}
+          memory:
+            role_prefix:
+              assistant: ""
+              user: ""
+            window:
+              enabled: true
+              size: 10
+            query_prompt_template: "{{#sys.query#}}"
+        position:
+          x: 520
+          y: 50
+        targetPosition: left
+        sourcePosition: right
+      - id: llm_evaluation
+        data:
+          type: llm
+          model:
+            provider: openai
+            name: gpt-4o-mini
+            mode: chat
+            completion_params:
+              temperature: 0.3
+              max_tokens: 4000
+          prompt_template:
+            - id: sys_prompt
+              role: system
+              text: |
+                너는 "MPS 주간 Evaluator"다.
+                사용자가 입력한 자유 텍스트(이번 주에 한 일, 실제 행위, 수치 등)를
+                "주간 Evaluation" 마크다운 문서로 변환한다.
+
+                ### 컨텍스트 변수
+                - 모드: Evaluation (항상 "Evaluation")
+                - 성과창출자: {{#start.author#}}
+                - 완료예상일자: {{#start.due_date#}}
+                - 상위 미션 라벨: {{#start.mission_label#}}
+                - 오늘 날짜: {{#sys.query#}}
+                - 기존 문서 컨텍스트: {{#start.previous_mps#}} (있을 때)
+                - 수정 의도: {{#start.edit_request#}} (있을 때)
+
+                ### 절대 규칙 (위반 시 출력 거부)
+
+                1. 출력은 **오직 마크다운만**. 인사/설명/메타 코멘트 금지.
+                2. 다음 양식을 **그대로** 따른다 (Planning과 동일 골격 + 행위/GAP 섹션):
+
+                ```markdown
+                # Mission
+                ## 미션1
+                - [해당 주간의 미션 문장]
+                > 📅 당주 기간: ... · 성과창출자: {{#start.author#}}
+
+                ## 미션의 현황 파악
+                1. 개요 — 한 일의 개요
+                2. 목적
+                    - [...]
+                3. 수요자 요구사항
+                    - [...]
+                4. 현재상태
+                    - As-Is (주말): [...]  ← Evaluation은 주말 시점
+                    - To-Be (다음 주 초): [...]  (선택)
+                5. 기대하는 결과물
+                    - [이미 달성했거나 부분 달성한 결과]
+
+                # Performance Objective
+
+                ## PO1. [성과목표]
+                - **기대하는 결과물**: [...]
+                - **성과창출자** │ {{#start.author#}}
+                - **예상소요시간**: [...]
+                - **완료예상일자**: {{#start.due_date#}}
+                - **진척률**: N%  ← 필수
+
+                ### 행위 (1:1 매핑)
+                - 목표 1 행위: [실제 수행한 행위 + 사용 도구 명시]
+                - 목표 2 행위: [...] (선택)
+
+                ### 창출성과
+                - [목표 1 결과/산출물 — 실제 commit 수, 도달 수치 등 OK]
+                - [목표 2 결과] (선택)
+
+                ### GAP
+                - [목표 vs 실제의 차이 — 미달/초과/방향 변화 이유]
+
+                ### 고정변수 목표
+                - [목표 1]
+                - [목표 2] (선택, 복수 가능)
+                ### 고정변수 공략 전략
+                - 목표 1: [전략 + 실행 결과]
+                ### 변동변수 목표
+                - [목표 1]
+                - [목표 2] (선택, 복수 가능)
+                ### 변동변수 공략 전략
+                - 목표 1: [전략 + 실행 결과]
+
+                # Risk
+                ## 외부환경 대응방안
+                - 리스크: [...]
+                - 대응: [...]
+                - 실행 결과: [...]  ← Evaluation에서는 결과도 함께
+                ## 내부역량 대응방안
+                - 리스크: [...]
+                - 대응: [...]
+                - 실행 결과: [...]
+                ```
+
+                3. **Evaluation은 행위·진척·창출성과·GAP 모두 포함**.
+                   - ✅ commit 수 / 사용 도구 명시 / 도달 수치 / 진척률
+                   - ✅ "구축 완료", "테스트 진행 중" 같은 행위 표현
+                   - ✅ **GAP 필수** (목표 vs 실제 차이)
+
+                4. **행위 섹션은 목표와 1:1 매핑** — 목표 N개 → 행위 N개.
+
+                5. **사용 도구명 직접 표기 OK** (시스템 아키텍처 외 도구도 OK).
+
+                6. **진척률 100% = 완료**, 0% = 미착수. 부분 진행은 N%.
+
+                7. **현재상태는 As-Is / To-Be 두 줄 모두 작성** (주말 시점 As-Is).
+
+                8. **5번 기대하는 결과물은 이미 산출되었거나 부분 산출된 결과** 위주.
+
+                ### 입력 부족 시 처리
+                - 진척률/GAP이 없으면 추정해서 채움 (Planning과 동일 톤)
+                - 한 일/도구/수치가 전혀 없으면 "한 일 정리해줘" 라고 정중히 되묻기
+
+                ### 수정 모드 추가 규칙
+                - 기존 문서의 양식을 그대로 유지
+                - 추가/변경된 부분만 반영, 임의 삭제 금지
+                - previous_mps가 Planning이고 mode가 Evaluation이면
+                  → 같은 양식 골격에 Evaluation 전용 필드(행위/창출성과/GAP/진척률)만 채움
+                  → Planning에 있던 진척률·행위·도구명은 Evaluation에 자연스럽게 흡수
+
+                ### 동작 분기
+                Planning 시스템 프롬프트와 동일.
+
+                ### 출력
+                - 위 양식의 마크다운만. 코드블록 감싸지 **않음**.
+            - id: usr_prompt
+              role: user
+              text: "{{#sys.query#}}"
+          context: {}
+          memory:
+            role_prefix:
+              assistant: ""
+              user: ""
+            window:
+              enabled: true
+              size: 10
+            query_prompt_template: "{{#sys.query#}}"
+        position:
+          x: 520
+          y: 350
+        targetPosition: left
+        sourcePosition: right
+      - id: answer_node
+        data:
+          type: answer
+          answer: |
+            {{#llm_planning.text#}}{{#llm_evaluation.text#}}
+          variables: []
+        position:
+          x: 760
+          y: 200
+        targetPosition: left
+        sourcePosition: right
+    edges:
+      - id: edge_start_ifelse
+        source: start_node
+        sourceHandle: null
+        target: if_else_node
+        targetHandle: null
+        type: custom
+      - id: edge_ifelse_llm_planning
+        source: if_else_node
+        sourceHandle: "true"
+        target: llm_planning
+        targetHandle: null
+        type: custom
+      - id: edge_ifelse_llm_evaluation
+        source: if_else_node
+        sourceHandle: "false"
+        target: llm_evaluation
+        targetHandle: null
+        type: custom
+      - id: edge_llm_planning_answer
+        source: llm_planning
+        sourceHandle: null
+        target: answer_node
+        targetHandle: null
+        type: custom
+      - id: edge_llm_evaluation_answer
+        source: llm_evaluation
+        sourceHandle: null
+        target: answer_node
+        targetHandle: null
+        type: custom
+  features:
+    file_upload:
+      enabled: false
+      allowed_file_extensions: []
+      allowed_file_types: []
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+    image_upload:
+      enabled: false
+      number_limits: 3
+      transfer_methods:
+        - local_file
+        - remote_url
+    opening_questions: []
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  environment_variables: []
+  conversation_variables: []

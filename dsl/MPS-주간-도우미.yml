@@ -212,7 +212,8 @@ workflow:
         - id: usr_prompt
           role: user
           text: '{{#sys.query#}}'
-        context: {}
+        context:
+          enabled: true
         memory:
           role_prefix:
             assistant: ''
@@ -356,7 +357,8 @@ workflow:
         - id: usr_prompt
           role: user
           text: '{{#sys.query#}}'
-        context: {}
+        context:
+          enabled: true
         memory:
           role_prefix:
             assistant: ''

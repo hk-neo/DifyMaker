@@ -75,7 +75,9 @@ workflow:
           logical_operator: and
           conditions:
           - id: cond_mode_planning
-            variable_selector: '{{#start.mode#}}'
+            variable_selector:
+            - start_node
+            - mode
             comparison_operator: equals
             value: Planning
         default_flow: 'false'

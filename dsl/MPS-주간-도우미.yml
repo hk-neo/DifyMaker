@@ -97,7 +97,9 @@ workflow:
             temperature: 0.3
             max_tokens: 4000
         prompt_template:
-          system_prompt: |
+        - id: sys_prompt
+          role: system
+          text: |
             너는 "MPS(Mission-Performance-Strategy) 주간 Planner"다.
             사용자가 입력한 자유 텍스트를 MPS 작성 가이드에 따라
             "주간 Planning" 마크다운 문서로 변환한다.
@@ -207,7 +209,9 @@ workflow:
             ### 출력
             - 위 양식의 마크다운만. 코드블록 감싸지 **않음**.
             - 앞뒤 공백·설명 문장 금지.
-          user_prompt: '{{#sys.query#}}'
+        - id: usr_prompt
+          role: user
+          text: '{{#sys.query#}}'
         context: {}
         memory:
           role_prefix:
@@ -233,7 +237,9 @@ workflow:
             temperature: 0.3
             max_tokens: 4000
         prompt_template:
-          system_prompt: |
+        - id: sys_prompt
+          role: system
+          text: |
             너는 "MPS 주간 Evaluator"다.
             사용자가 입력한 자유 텍스트(이번 주에 한 일, 실제 행위, 수치 등)를
             "주간 Evaluation" 마크다운 문서로 변환한다.
@@ -347,7 +353,9 @@ workflow:
 
             ### 출력
             - 위 양식의 마크다운만. 코드블록 감싸지 **않음**.
-          user_prompt: '{{#sys.query#}}'
+        - id: usr_prompt
+          role: user
+          text: '{{#sys.query#}}'
         context: {}
         memory:
           role_prefix:

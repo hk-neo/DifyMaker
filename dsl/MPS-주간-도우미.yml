@@ -106,12 +106,12 @@ workflow:
 
             ### 컨텍스트 변수
             - 모드: Planning (항상 "Planning")
-            - 성과창출자: {{#start.author#}}
-            - 완료예상일자: {{#start.due_date#}}
-            - 상위 미션 라벨: {{#start.mission_label#}}
+            - 성과창출자: {{#start_node.author#}}
+            - 완료예상일자: {{#start_node.due_date#}}
+            - 상위 미션 라벨: {{#start_node.mission_label#}}
             - 오늘 날짜: {{#sys.query#}}
-            - 기존 문서 컨텍스트: {{#start.previous_mps#}} (있을 때)
-            - 수정 의도: {{#start.edit_request#}} (있을 때)
+            - 기존 문서 컨텍스트: {{#start_node.previous_mps#}} (있을 때)
+            - 수정 의도: {{#start_node.edit_request#}} (있을 때)
 
             ### 절대 규칙 (위반 시 출력 거부)
 
@@ -122,7 +122,7 @@ workflow:
             # Mission
             ## 미션1
             - [미션 문장 — 한 문장]
-            > 📅 당주 기간: YYYY년 M월 N주차 (M/D ~ M/D) · 성과창출자: {{#start.author#}}
+            > 📅 당주 기간: YYYY년 M월 N주차 (M/D ~ M/D) · 성과창출자: {{#start_node.author#}}
 
             ## 미션의 현황 파악
             1. 개요
@@ -143,9 +143,9 @@ workflow:
 
             ## PO1. [성과목표 — 결과물로만]
             - **기대하는 결과물**: [...]
-            - **성과창출자** │ {{#start.author#}}
+            - **성과창출자** │ {{#start_node.author#}}
             - **예상소요시간**: [...]
-            - **완료예상일자**: {{#start.due_date#}}
+            - **완료예상일자**: {{#start_node.due_date#}}
 
             ### 고정변수 목표
             - [목표 1]
@@ -247,12 +247,12 @@ workflow:
 
             ### 컨텍스트 변수
             - 모드: Evaluation (항상 "Evaluation")
-            - 성과창출자: {{#start.author#}}
-            - 완료예상일자: {{#start.due_date#}}
-            - 상위 미션 라벨: {{#start.mission_label#}}
+            - 성과창출자: {{#start_node.author#}}
+            - 완료예상일자: {{#start_node.due_date#}}
+            - 상위 미션 라벨: {{#start_node.mission_label#}}
             - 오늘 날짜: {{#sys.query#}}
-            - 기존 문서 컨텍스트: {{#start.previous_mps#}} (있을 때)
-            - 수정 의도: {{#start.edit_request#}} (있을 때)
+            - 기존 문서 컨텍스트: {{#start_node.previous_mps#}} (있을 때)
+            - 수정 의도: {{#start_node.edit_request#}} (있을 때)
 
             ### 절대 규칙 (위반 시 출력 거부)
 
@@ -263,7 +263,7 @@ workflow:
             # Mission
             ## 미션1
             - [해당 주간의 미션 문장]
-            > 📅 당주 기간: ... · 성과창출자: {{#start.author#}}
+            > 📅 당주 기간: ... · 성과창출자: {{#start_node.author#}}
 
             ## 미션의 현황 파악
             1. 개요 — 한 일의 개요
@@ -281,9 +281,9 @@ workflow:
 
             ## PO1. [성과목표]
             - **기대하는 결과물**: [...]
-            - **성과창출자** │ {{#start.author#}}
+            - **성과창출자** │ {{#start_node.author#}}
             - **예상소요시간**: [...]
-            - **완료예상일자**: {{#start.due_date#}}
+            - **완료예상일자**: {{#start_node.due_date#}}
             - **진척률**: N%  ← 필수
 
             ### 행위 (1:1 매핑)

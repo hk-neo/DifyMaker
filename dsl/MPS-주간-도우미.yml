@@ -65,10 +65,11 @@ workflow:
           conditions_type: and
           cases:
             - case_id: "true"
-              case_name: Planning 분기
+              logical_operator: and
               conditions:
-                - variable: "{{#start.mode#}}"
-                  condition: equals
+                - id: cond_mode_planning
+                  variable: "{{#start.mode#}}"
+                  operator: equals
                   value: Planning
           default_flow: "false"
         position:

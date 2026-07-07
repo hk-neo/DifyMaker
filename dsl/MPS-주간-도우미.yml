@@ -78,7 +78,7 @@ workflow:
             variable_selector:
             - start_node
             - mode
-            comparison_operator: equals
+            comparison_operator: is
             value: Planning
         default_flow: 'false'
       position:

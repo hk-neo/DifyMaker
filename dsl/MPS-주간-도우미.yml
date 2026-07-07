@@ -23,36 +23,43 @@ workflow:
                 - Planning
                 - Evaluation
               default: Planning
+              hint: Planning 또는 Evaluation 모드를 선택하세요
             - variable: content
               label: 내용 (자유 텍스트)
               type: paragraph
               required: false
               default: ""
+              hint: 이번 주 MPS Planning/Evaluation을 생성하기 위한 내용을 입력하세요
             - variable: previous_mps
               label: 기존 MPS (수정 시 붙여넣기)
               type: paragraph
               required: false
               default: ""
+              hint: "기존 MPS 문서가 있으면 붙여넣으세요 (없으면 비워두세요)"
             - variable: edit_request
               label: 수정 의도
               type: paragraph
               required: false
               default: ""
+              hint: "기존 MPS를 수정하고 싶다면 수정 의도를 입력하세요"
             - variable: author
               label: 성과창출자
               type: text-input
               required: false
               default: "본인"
+              hint: "성과창출자 이름을 입력하세요 (기본값: 본인)"
             - variable: due_date
               label: 완료예상일자 (YYYY-MM-DD)
               type: text-input
               required: false
               default: ""
+              hint: 완료예상일자를 YYYY-MM-DD 형식으로 입력하세요
             - variable: mission_label
               label: 상위 미션 라벨
               type: text-input
               required: false
               default: ""
+              hint: "상위 미션 라벨을 입력하세요 (없으면 비워두세요)"
           is_advanced: false
         position:
           x: 80

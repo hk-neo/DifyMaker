@@ -37,7 +37,7 @@ workflow:
           type: paragraph
           required: false
           default: ''
-          hint: 예: "오늘 비 옴", "매운 거 땡김", "동료 3명과 회식"
+          hint: '예: "오늘 비 옴", "매운 거 땡김", "동료 3명과 회식"'
         is_advanced: false
       position:
         x: 80

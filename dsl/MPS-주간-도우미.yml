@@ -377,8 +377,6 @@ workflow:
         type: answer
         answer: |
           {{#llm_planning.text#}}{{#llm_evaluation.text#}}
-          # Note: Dify if-else routes one branch at a time, so only the active LLM's text is populated.
-          # The inactive branch's variable renders as empty string — this matches the schema-doc pattern.
         variables: []
       position:
         x: 760

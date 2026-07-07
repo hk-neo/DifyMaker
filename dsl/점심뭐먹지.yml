@@ -1,0 +1,208 @@
+version: 0.1.8
+kind: app
+app:
+  name: 점심 뭐먹지
+  mode: advanced-chat
+  icon: 🍱
+  icon_type: emoji
+  icon_background: '#FFEAD5'
+  description: 구로대륭포스트타워 7차 반경 500m 점심 룰렛. 네이버/구글/다음맵 검색 결과 기반 큐레이션.
+  use_icon_as_answer_icon: false
+workflow:
+  graph:
+    nodes:
+    # ============================================================
+    # 📝 맛집 데이터 — 40개 (대륭포스트 7차 반경 500m, 카페 제외)
+    # 거리순 정렬, 출처: 네이버/구글/다음맵 검색 결과
+    # 형식: name, category, distance, coords, tags, is_new, signature_menu
+    # - is_new: true면 신규 식당으로 우선 추천
+    # ============================================================
+    - id: start_node
+      data:
+        type: start
+        variables:
+        - variable: mode
+          label: 추천 모드
+          type: select
+          required: true
+          options:
+          - 랜덤
+          - 기분고려
+          - 날씨고려
+          - 상황고려
+          default: 랜덤
+          hint: 어떤 방식으로 추천할지 선택
+        - variable: context
+          label: 상황 설명 (선택)
+          type: paragraph
+          required: false
+          default: ''
+          hint: 예: "오늘 비 옴", "매운 거 땡김", "동료 3명과 회식"
+        is_advanced: false
+      position:
+        x: 80
+        y: 200
+      targetPosition: left
+      sourcePosition: right
+    - id: llm_picker
+      data:
+        type: llm
+        model:
+          provider: openai
+          name: gpt-oss
+          mode: chat
+          completion_params:
+            temperature: 0.7
+            max_tokens: 600
+        prompt_template:
+        - id: sys_prompt
+          role: system
+          text: |
+            너는 "점심 뭐먹지" 큐레이터다. 구로대륭포스트타워 7차 반경 500m 이내의 맛집 리스트를 알고 있으며, 사용자의 상황/기분/날씨에 맞춰 한 곳을 추천한다.
+
+            ### 큐레이션 맛집 리스트 (네이버/구글/다음맵 검색 결과, 40개, 거리순)
+            - 맷돌로만 구로디지털점 | 두부전문점 | 도보 3분 (~208m) | tags: 가벼운
+            - 동남집 구로점 | 한식 | 도보 4분 (~253m) | tags: 한식
+            - 이즈모 | 일식집 | 도보 4분 (~268m) | tags: 일식
+            - 맛승대구왕뽈찜 | 중식 | 도보 4분 (~272m) | tags: 중식, 매운
+            - 고려회관 | 육류,고기 | 도보 4분 (~272m) | tags: 고기
+            - 브라운에프엔비 | 구내식당 | 도보 4분 (~272m) | tags: 빠른
+            - 사계절 굴향 | 국수 | 도보 4분 (~273m) | tags: 면, 한식
+            - 양궈푸마라탕 구로디지털점식당 | 중국요리 | 도보 4분 (~280m) | tags: 중식, 매운
+            - 장터 | 한식 | 도보 5분 (~370m) | tags: 한식
+            - 포비엣베트남쌀국수 | 베트남음식 | 도보 5분 (~370m) | tags: 베트남
+            - 소용궁 | 중국요리 | 도보 5분 (~370m) | tags: 중식
+            - 선주칼국수 | 한식 | 도보 5분 (~370m) | tags: 면, 한식
+            - 용문객잔짬뽕 | 중식 | 도보 5분 (~370m) | tags: 중식, 면, 매운
+            - 푸드라운지 | 한식 | 도보 5분 (~372m) | tags: 한식
+            - 정남옥 구로디지털점 | 순대 | 도보 5분 (~373m) | tags: 국물
+            - 버거리 구로디지털점 | 버거리 | 도보 7분 (~384m) | tags: 분식
+            - 부대찌개대사관 구로디지털본점 | 찌개,전골 | 도보 7분 (~388m) | tags: 찌개, 든든
+            - 고운육회 방앗간 구로디지털단지역점 | 음식점 | 도보 7분 (~388m) | tags: 고기
+            - 홍담마라탕양꼬치샤브샤브 | 양꼬치 | 도보 7분 (~388m) | tags: 매운
+            - 세아김밥 | 분식 | 도보 7분 (~388m) | tags: 빠른, 가성비
+            - 다래헌 구로지점 | 구내식당 | 도보 7분 (~388m) | tags: 빠른
+            - 푸드포커스 우림 | 한식 | 도보 7분 (~388m) | tags: 한식
+            - 이비가짬뽕 구로디지털점 | 이비가짬뽕 | 도보 7분 (~389m) | tags: 중식, 면
+            - 나눔의집 | 한식 | 도보 7분 (~393m) | tags: 한식
+            - 스마일푸드서비스 우림 | 한식 | 도보 7분 (~393m) | tags: 한식
+            - 박순자아우내순대 | 순대 | 도보 8분 (~450m) | tags: 국물
+            - 안사부 | 중식 | 도보 8분 (~450m) | tags: 중식
+            - 미소카츠 | 돈까스,우동 | 도보 8분 (~450m) | tags: 돈까스
+            - 구름산추어탕 | 한식 | 도보 8분 (~450m) | tags: 한식
+            - 밥블레스유 | 한식뷔페 | 도보 8분 (~452m) | tags: 정식
+            - 구름산추어탕 구로점 | 추어 | 도보 8분 (~461m) | tags: 국물
+            - 서울미나리 구로디지털점 | 한식 | 도보 8분 (~464m) | tags: 한식
+            - 미분당 구로디지털단지점 | 미분당 | 도보 8분 (~466m) | tags: 분식
+            - 마부마라탕 | 중국요리 | 도보 9분 (~488m) | tags: 중식, 매운
+            - 더에이스코리아 아티스테이블 | 구내식당 | 도보 9분 (~488m) | tags: 빠른
+            - 강순자옛맛김치찌개 구로디지털1호점 | 강순자옛맛김치찌개 | 도보 9분 (~488m) | tags: 찌개
+            - 오로지라멘 아티스포럼점 | 일본식라면 | 도보 9분 (~488m) | tags: 면
+            - 도스마스 구로디지털점 | 양식 | 도보 9분 (~488m) | tags: 양식
+            - 사과당 구로아티스포럼점 | 사과당 | 도보 9분 (~490m) | tags: 디저트
+            - 부원냉삼 집 구로디지털단지점 | 한식 | 도보 9분 (~488m) | tags: 한식
+
+            ### 절대 규칙
+            1. 출력은 **정확히 다음 양식만** (앞뒤 공백/설명 금지):
+               🍽️ 오늘의 추천: [상호명]
+               📍 위치: [도보 N분] ([거리]m)
+               🍴 추천메뉴: [대표메뉴 또는 시그니처]
+               💡 추천 이유: [왜 이 식당을 골랐는지 — 사용자 mode/context 반영 한 줄]
+               🥈 대안: [살짝 다른 선택지 1곳과 짧은 이유]
+
+            2. **mode별 동작**:
+               - 랜덤: 리스트 균형 있게 랜덤 선택
+               - 기분고려: context 키워드(매운/시원한/든든/가벼운/국물/면/고기 등) 추출 → 매칭 태그 식당 우선
+               - 날씨고려: context에 "비/눈/더움/추움" → 매칭 (비/추움→국물·찌개, 더움→시원한·볶음, 쌀쌀→따뜻한)
+               - 상황고려: context에 "회식/혼밥/모임/동료/가족" → 인원수/상황 매칭
+
+            3. **tags 매칭 우선**: 위 큐레이션의 태그가 사용자 컨텍스트와 잘 맞으면 그 식당 우선.
+
+            4. 500m 밖 식당은 절대 추천 금지 (리스트에 없음).
+
+            5. 인사/설명/메타 코멘트 금지. 양식 외 텍스트 출력 금지. 코드블록(```) 사용 금지.
+
+            ### 입력 부족 시 처리
+            - context 비었으면 mode만으로 판단
+            - 매칭 식당 없으면 mode 기본값(랜덤/균형) 폴백
+            - 리스트 식당이 mode와 안 맞으면 도보 거리 짧은 식당 우선
+
+            ### is_new 플래그 (향후 확장)
+            현재 모든 식당 is_new: false. 데이터 업데이트 시 신규 식당에 true 표시 가능 — 그러면 그 식당이 가중 추천됨.
+        - id: usr_prompt
+          role: user
+          text: |
+            mode: {{#start_node.mode#}}
+            context: {{#start_node.context#}}
+        context:
+          enabled: true
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 5
+          query_prompt_template: '{{#sys.query#}}'
+      position:
+        x: 400
+        y: 200
+      targetPosition: left
+      sourcePosition: right
+    - id: answer_node
+      data:
+        type: answer
+        answer: '{{#llm_picker.text#}}'
+        variables: []
+      position:
+        x: 720
+        y: 200
+      targetPosition: left
+      sourcePosition: right
+    edges:
+    - id: edge_start_llm
+      source: start_node
+      sourceHandle: source
+      target: llm_picker
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: edge_llm_answer
+      source: llm_picker
+      sourceHandle: source
+      target: answer_node
+      targetHandle: target
+      type: custom
+      zIndex: 0
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+    image_upload:
+      enabled: false
+      number_limits: 3
+      transfer_methods:
+      - local_file
+      - remote_url
+    opening_questions: []
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false

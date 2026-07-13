@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Editor
+.vscode/
+.idea/
+
+# Dify local export drafts (only the curated dsl/ folder is tracked)
+dify-draft-*.yml
+
+# Superpowers SDD scratch (progress ledger is local-only)
+.superpowers/sdd/*.diff
+.superpowers/sdd/*-report.md
+.superpowers/sdd/*-brief.md
+.superpowers/sdd/*.json
+
+# Node (if any UI prototype added later)
+node_modules/
+.env
